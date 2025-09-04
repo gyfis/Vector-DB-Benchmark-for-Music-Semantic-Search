@@ -2,7 +2,7 @@ python-dotenv==1.0.1
 pandas==2.2.2
 numpy==1.26.4
 tqdm==4.66.5
-matplotlib==3.10.5
+# matplotlib==3.10.5
 mplcyberpunk
 PyYAML==6.0.1
 pyarrow==21.0.0
@@ -23,6 +23,9 @@ weaviate-client==v4.16.8
 topk-sdk
 pinecone>=4.0.0
 sqlite-vec
+pgvector==0.3.5
+clickhouse-driver==0.2.9
+psycopg2-binary==2.9.9
 google-api-core
 protobuf
 googleapis-common-protos

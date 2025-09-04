@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <!-- Enable vector search functionality -->
+    <vector_search>
+        <max_threads>16</max_threads>
+        <max_memory_usage>8GB</max_memory_usage>
+    </vector_search>
+</clickhouse>

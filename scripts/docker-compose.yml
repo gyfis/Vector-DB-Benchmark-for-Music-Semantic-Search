@@ -104,7 +104,44 @@ services:
     ports:
       - "8079:8080"
 
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: postgres-pgvector
+    environment:
+      POSTGRES_DB: music_vectors
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8
+    container_name: clickhouse-vector
+    ports:
+      - "8123:8123"  # HTTP interface
+      - "9009:9000"  # Native interface (changed from 9000 to avoid conflict with MinIO)
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./clickhouse-config.xml:/etc/clickhouse-server/config.d/custom.xml
+    environment:
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   qdrant_storage:
   milvus_data:
   weaviate_data:
+  postgres_data:
+  clickhouse_data:

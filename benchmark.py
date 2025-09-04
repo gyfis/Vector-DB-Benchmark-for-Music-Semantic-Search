@@ -12,11 +12,11 @@ import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-import mplcyberpunk
+# import matplotlib.pyplot as plt
+# import mplcyberpunk
 from databases.sqlite_client import SQLite
 
-plt.style.use("cyberpunk")
+# plt.style.use("cyberpunk")
 
 from utils.metrics import hits_at_k
 
@@ -24,6 +24,16 @@ from databases.qdrant_client import Qdrant
 from databases.milvus_client import Milvus
 from databases.weaviate_client import WeaviateDB
 from databases.pinecone_client import PineconeClient
+from databases.postgres_client import Postgres
+from databases.clickhouse_client import (
+    ClickHouseMergeTree,
+    ClickHouseFloat16,
+    ClickHouseFloat32,
+    ClickHouseFloat64,
+    ClickHouseBF16,
+    ClickHouseBF32,
+    ClickHouseBF64,
+)
 
 
 def load_embeddings(parquet_path: str):
@@ -62,6 +72,64 @@ def get_db(name: str, args) -> Any:
 
     if name == "sqlite":
         return SQLite(db_path=os.getenv("SQLITE_DB_PATH", "music_vectors.db"))
+
+    if name == "postgres":
+        return Postgres(
+            host=os.getenv("POSTGRES_HOST", "localhost"),
+            port=os.getenv("POSTGRES_PORT", "5433"),
+            database=os.getenv("POSTGRES_DB", "music_vectors"),
+            user=os.getenv("POSTGRES_USER", "postgres"),
+            password=os.getenv("POSTGRES_PASSWORD", "password")
+        )
+
+    if name == "clickhouse-mergetree":
+        return ClickHouseMergeTree(
+            host=os.getenv("CLICKHOUSE_HOST", "localhost"),
+            port=int(os.getenv("CLICKHOUSE_PORT", "9009")),
+            database=os.getenv("CLICKHOUSE_DB", "default")
+        )
+
+    if name == "clickhouse-float16":
+        return ClickHouseFloat16(
+            host=os.getenv("CLICKHOUSE_HOST", "localhost"),
+            port=int(os.getenv("CLICKHOUSE_PORT", "9009")),
+            database=os.getenv("CLICKHOUSE_DB", "default")
+        )
+
+    if name == "clickhouse-float32":
+        return ClickHouseFloat32(
+            host=os.getenv("CLICKHOUSE_HOST", "localhost"),
+            port=int(os.getenv("CLICKHOUSE_PORT", "9009")),
+            database=os.getenv("CLICKHOUSE_DB", "default")
+        )
+
+    if name == "clickhouse-float64":
+        return ClickHouseFloat64(
+            host=os.getenv("CLICKHOUSE_HOST", "localhost"),
+            port=int(os.getenv("CLICKHOUSE_PORT", "9009")),
+            database=os.getenv("CLICKHOUSE_DB", "default")
+        )
+
+    if name == "clickhouse-bf16":
+        return ClickHouseBF16(
+            host=os.getenv("CLICKHOUSE_HOST", "localhost"),
+            port=int(os.getenv("CLICKHOUSE_PORT", "9009")),
+            database=os.getenv("CLICKHOUSE_DB", "default")
+        )
+
+    if name == "clickhouse-bf32":
+        return ClickHouseBF32(
+            host=os.getenv("CLICKHOUSE_HOST", "localhost"),
+            port=int(os.getenv("CLICKHOUSE_PORT", "9009")),
+            database=os.getenv("CLICKHOUSE_DB", "default")
+        )
+
+    if name == "clickhouse-bf64":
+        return ClickHouseBF64(
+            host=os.getenv("CLICKHOUSE_HOST", "localhost"),
+            port=int(os.getenv("CLICKHOUSE_PORT", "9009")),
+            database=os.getenv("CLICKHOUSE_DB", "default")
+        )
 
     return None
 
@@ -367,164 +435,164 @@ def main():
     print("Saved metrics.json")
 
     # --- Call plot_benchmarks.py to generate summary image ---
-    import subprocess
+    # import subprocess
 
-    plot_script = Path(__file__).parent / "plot_benchmarks.py"
-    metrics_path = out_dir / "metrics.json"
-    out_prefix = out_dir / "benchmark_summary"
-    try:
-        subprocess.run(
-            ["python", str(plot_script), str(metrics_path), str(out_prefix)], check=True
-        )
-    except Exception as e:
-        print(f"[WARN] Could not run plot_benchmarks.py: {e}")
+    # plot_script = Path(__file__).parent / "plot_benchmarks.py"
+    # metrics_path = out_dir / "metrics.json"
+    # out_prefix = out_dir / "benchmark_summary"
+    # try:
+    #     subprocess.run(
+    #         ["python", str(plot_script), str(metrics_path), str(out_prefix)], check=True
+    #     )
+    # except Exception as e:
+    #     print(f"[WARN] Could not run plot_benchmarks.py: {e}")
 
-    # --- New plotting for per-k, per-metric results ---
-    # Get all k values
-    all_ks = set()
-    for db_name in results:
-        if db_name == "_config":
-            continue
-        all_ks.update(
-            [
-                int(k.split("=")[1])
-                for k in results[db_name].keys()
-                if k.startswith("k=")
-            ]
-        )
-    all_ks = sorted(all_ks)
-    # List of metrics to plot
-    metric_keys = [
-        ("avg_query_latency_sec", "Avg Query Latency (sec)"),
-        ("p50_query_latency_sec", "P50 Latency (sec)"),
-        ("p95_query_latency_sec", "P95 Latency (sec)"),
-        ("p99_query_latency_sec", "P99 Latency (sec)"),
-        ("latency_stddev_sec", "Latency Stddev (sec)"),
-        ("first_query_latency_sec", "First Query Latency (sec)"),
-        ("avg_qps", "Avg QPS"),
-        ("ingest_time_sec", "Ingest Time (sec)"),
-        ("setup_time_sec", "Setup Time (sec)"),
-    ]
-    # Add hits/recall for each k
-    for k in all_ks:
-        metric_keys.append((f"avg_hits_at_{k}", f"Avg Hits in Top {k}"))
-        metric_keys.append((f"avg_recall_at_{k}", f"Avg Recall@{k}"))
+    # # --- New plotting for per-k, per-metric results ---
+    # # Get all k values
+    # all_ks = set()
+    # for db_name in results:
+    #     if db_name == "_config":
+    #         continue
+    #     all_ks.update(
+    #         [
+    #             int(k.split("=")[1])
+    #             for k in results[db_name].keys()
+    #             if k.startswith("k=")
+    #         ]
+    #     )
+    # all_ks = sorted(all_ks)
+    # # List of metrics to plot
+    # metric_keys = [
+    #     ("avg_query_latency_sec", "Avg Query Latency (sec)"),
+    #     ("p50_query_latency_sec", "P50 Latency (sec)"),
+    #     ("p95_query_latency_sec", "P95 Latency (sec)"),
+    #     ("p99_query_latency_sec", "P99 Latency (sec)"),
+    #     ("latency_stddev_sec", "Latency Stddev (sec)"),
+    #     ("first_query_latency_sec", "First Query Latency (sec)"),
+    #     ("avg_qps", "Avg QPS"),
+    #     ("ingest_time_sec", "Ingest Time (sec)"),
+    #     ("setup_time_sec", "Setup Time (sec)"),
+    # ]
+    # # Add hits/recall for each k
+    # for k in all_ks:
+    #     metric_keys.append((f"avg_hits_at_{k}", f"Avg Hits in Top {k}"))
+    #     metric_keys.append((f"avg_recall_at_{k}", f"Avg Recall@{k}"))
 
-    # For each k, plot each metric for all DBs
+    # # For each k, plot each metric for all DBs
 
-    for k in all_ks:
-        k_dir = out_dir / f"k{k}"
-        k_dir.mkdir(exist_ok=True)
-        for metric_key, metric_label in metric_keys:
-            values = []
-            db_labels = []
-            for db_name in results:
-                if db_name == "_config":
-                    continue
-                kkey = f"k={k}"
-                v = results[db_name].get(kkey, {}).get(metric_key, None)
-                if v is not None:
-                    values.append(v)
-                    db_labels.append(db_name)
-            if not values:
-                continue
-            fig, ax = plt.subplots(figsize=(max(6, len(db_labels) * 1.5), 5))
-            bars = ax.bar(db_labels, values, color="skyblue")
-            mplcyberpunk.add_bar_gradient(bars=bars)
-            ax.set_title(f"{metric_label} (k={k})")
-            ax.set_ylabel(metric_label)
-            for bar, value in zip(bars, values):
-                ax.annotate(
-                    f"{value:.4f}",
-                    xy=(bar.get_x() + bar.get_width() / 2, bar.get_height()),
-                    xytext=(0, 5),
-                    textcoords="offset points",
-                    ha="center",
-                    va="bottom",
-                    fontsize=11,
-                    fontweight="bold",
-                )
-            plt.tight_layout()
-            fname = (
-                metric_label.lower()
-                .replace(" ", "_")
-                .replace("@", "at")
-                .replace("(", "")
-                .replace(")", "")
-                .replace("/", "_")
-                + f"_k{k}.png"
-            )
-            plt.savefig(k_dir / fname, bbox_inches="tight")
-            plt.close(fig)
-            print(f"Saved {fname} in {k_dir}/")
+    # for k in all_ks:
+    #     k_dir = out_dir / f"k{k}"
+    #     k_dir.mkdir(exist_ok=True)
+    #     for metric_key, metric_label in metric_keys:
+    #         values = []
+    #         db_labels = []
+    #         for db_name in results:
+    #             if db_name == "_config":
+    #                 continue
+    #             kkey = f"k={k}"
+    #             v = results[db_name].get(kkey, {}).get(metric_key, None)
+    #             if v is not None:
+    #                 values.append(v)
+    #                 db_labels.append(db_name)
+    #         if not values:
+    #             continue
+    #         fig, ax = plt.subplots(figsize=(max(6, len(db_labels) * 1.5), 5))
+    #         bars = ax.bar(db_labels, values, color="skyblue")
+    #         mplcyberpunk.add_bar_gradient(bars=bars)
+    #         ax.set_title(f"{metric_label} (k={k})")
+    #         ax.set_ylabel(metric_label)
+    #         for bar, value in zip(bars, values):
+    #             ax.annotate(
+    #                 f"{value:.4f}",
+    #                 xy=(bar.get_x() + bar.get_width() / 2, bar.get_height()),
+    #                 xytext=(0, 5),
+    #                 textcoords="offset points",
+    #                 ha="center",
+    #                 va="bottom",
+    #                 fontsize=11,
+    #                 fontweight="bold",
+    #             )
+    #         plt.tight_layout()
+    #         fname = (
+    #             metric_label.lower()
+    #             .replace(" ", "_")
+    #             .replace("@", "at")
+    #             .replace("(", "")
+    #             .replace(")", "")
+    #             .replace("/", "_")
+    #             + f"_k{k}.png"
+    #         )
+    #         plt.savefig(k_dir / fname, bbox_inches="tight")
+    #         plt.close(fig)
+    #         print(f"Saved {fname} in {k_dir}/")
 
-        # Table for all metrics for this k
-        table_metrics = [
-            "avg_query_latency_sec",
-            "p50_query_latency_sec",
-            "p95_query_latency_sec",
-            "p99_query_latency_sec",
-            "latency_stddev_sec",
-            "first_query_latency_sec",
-            "avg_qps",
-            "ingest_time_sec",
-            "setup_time_sec",
-            f"avg_hits_at_{k}",
-            f"avg_recall_at_{k}",
-        ]
-        db_labels = [db for db in results if db != "_config"]
-        cell_text = []
-        row_labels = []
-        for metric_key in table_metrics:
-            row = []
-            for db_name in db_labels:
-                v = results[db_name].get(f"k={k}", {}).get(metric_key, None)
-                row.append(
-                    f"{v:.4f}"
-                    if isinstance(v, float)
-                    else (str(v) if v is not None else "-")
-                )
-            cell_text.append(row)
-            row_labels.append(metric_key)
-        fig, ax = plt.subplots(
-            figsize=(
-                max(6, len(db_labels) * 2),
-                0.5 + 0.5 * len(table_metrics),
-            )  # reduce height
-        )
-        # Set figure background color (cyberpunk dark)
-        fig.patch.set_facecolor("#181c2a")
-        ax.set_facecolor("#181c2a")
-        table = ax.table(
-            cellText=cell_text,
-            rowLabels=row_labels,
-            colLabels=db_labels,
-            loc="center",
-            cellLoc="center",
-        )
-        table.auto_set_font_size(False)
-        table.set_fontsize(12)
-        table.scale(1.2, 1.1)  # reduce vertical scaling
-        # Set transparent background, visible text color, and brighter border for table cells
-        for key, cell in table.get_celld().items():
-            cell.set_facecolor((0, 0, 0, 0))  # transparent cell
-            cell.set_text_props(color="#97ffb6")  # cyberpunk green
-            cell.set_edgecolor("#97ffb6")  # brighter border
-        # Optionally, set header cells to a different color for contrast
-        for idx in range(len(db_labels)):
-            table[(0, idx)].set_text_props(color="#fff")  # white for headers
-        for idx in range(len(row_labels)):
-            table[(idx + 1, -1)].set_text_props(color="#fff")  # white for row labels
-        ax.axis("off")
-        plt.title(f"Benchmark Metrics Table (k={k})", fontsize=16, pad=20, color="#fff")
-        plt.tight_layout()
-        plt.savefig(
-            k_dir / f"metrics_table_k{k}.png",
-            bbox_inches="tight",
-            facecolor=fig.get_facecolor(),
-        )
-        plt.close(fig)
-        print(f"Saved metrics_table_k{k}.png in {k_dir}/")
+    #     # Table for all metrics for this k
+    #     table_metrics = [
+    #         "avg_query_latency_sec",
+    #         "p50_query_latency_sec",
+    #         "p95_query_latency_sec",
+    #         "p99_query_latency_sec",
+    #         "latency_stddev_sec",
+    #         "first_query_latency_sec",
+    #         "avg_qps",
+    #         "ingest_time_sec",
+    #         "setup_time_sec",
+    #         f"avg_hits_at_{k}",
+    #         f"avg_recall_at_{k}",
+    #     ]
+    #     db_labels = [db for db in results if db != "_config"]
+    #     cell_text = []
+    #     row_labels = []
+    #     for metric_key in table_metrics:
+    #         row = []
+    #         for db_name in db_labels:
+    #             v = results[db_name].get(f"k={k}", {}).get(metric_key, None)
+    #             row.append(
+    #                 f"{v:.4f}"
+    #                 if isinstance(v, float)
+    #                 else (str(v) if v is not None else "-")
+    #             )
+    #         cell_text.append(row)
+    #         row_labels.append(metric_key)
+    #     fig, ax = plt.subplots(
+    #         figsize=(
+    #             max(6, len(db_labels) * 2),
+    #             0.5 + 0.5 * len(table_metrics),
+    #         )  # reduce height
+    #     )
+    #     # Set figure background color (cyberpunk dark)
+    #     fig.patch.set_facecolor("#181c2a")
+    #     ax.set_facecolor("#181c2a")
+    #     table = ax.table(
+    #         cellText=cell_text,
+    #         rowLabels=row_labels,
+    #         colLabels=db_labels,
+    #         loc="center",
+    #         cellLoc="center",
+    #     )
+    #     table.auto_set_font_size(False)
+    #     table.set_fontsize(12)
+    #     table.scale(1.2, 1.1)  # reduce vertical scaling
+    #     # Set transparent background, visible text color, and brighter border for table cells
+    #     for key, cell in table.get_celld().items():
+    #         cell.set_facecolor((0, 0, 0, 0))  # transparent cell
+    #         cell.set_text_props(color="#97ffb6")  # cyberpunk green
+    #         cell.set_edgecolor("#97ffb6")  # brighter border
+    #     # Optionally, set header cells to a different color for contrast
+    #     for idx in range(len(db_labels)):
+    #         table[(0, idx)].set_text_props(color="#fff")  # white for headers
+    #     for idx in range(len(row_labels)):
+    #         table[(idx + 1, -1)].set_text_props(color="#fff")  # white for row labels
+    #     ax.axis("off")
+    #     plt.title(f"Benchmark Metrics Table (k={k})", fontsize=16, pad=20, color="#fff")
+    #     plt.tight_layout()
+    #     plt.savefig(
+    #         k_dir / f"metrics_table_k{k}.png",
+    #         bbox_inches="tight",
+    #         facecolor=fig.get_facecolor(),
+    #     )
+    #     plt.close(fig)
+    #     print(f"Saved metrics_table_k{k}.png in {k_dir}/")
 
 
 if __name__ == "__main__":
